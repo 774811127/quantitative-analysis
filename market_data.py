@@ -3,8 +3,10 @@ import pandas as pd
 
 
 class MarketData:
-    monthly_data_directory = 'data_base\initial_data\monthly_market_data'
-    save_directory = 'data_base'
+    monthly_data_directory = 'database\original_data\monthly_data'
+    daily_data_directory = 'database\original_data\daily_data'
+    save_directory = 'database'
+    file_name = 'market_data.csv'
     contracts_df = pd.read_csv('data_base/market_data.csv')
 
     def read_monthly_data(self):
@@ -22,10 +24,18 @@ class MarketData:
             self.contracts_df = pd.concat([self.contracts_df, df])
 
     def read_daily_data(self):
-        pass
+        file_list = [file for file in os.listdir(self.daily_data_directory) if file.endswith('.csv')]
+
+        for file in file_list:
+            file_path = os.path.join(self.daily_data_directory, file)
+            print('reading', file)
+            original_df = pd.read_csv(file_path, on_bad_lines='warn')
+            print('\n')
+
 
     def save(self):
-        self.contracts_df.to_csv('data_base/market_data.csv', index=False)
+        file_path = os.path.join(self.save_directory, self.file_name)
+        self.contracts_df.to_csv(file_path, index=False)
 
 
 if __name__ == '__main__':
