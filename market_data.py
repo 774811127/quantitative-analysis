@@ -108,7 +108,7 @@ class MarketData:
 
 if __name__ == '__main__':
     market_data = MarketData()
-    market_data.read_monthly_data()
-    market_data.save()
+    # market_data.read_monthly_data()
+    # market_data.save()
     market_data.read_daily_data()
     market_data.save()
