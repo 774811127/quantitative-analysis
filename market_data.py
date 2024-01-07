@@ -10,7 +10,7 @@ class MarketData:
     daily_data_directory = r'database\original_data\daily_data'
     save_directory = 'database'
     file_name = 'market_data.csv'
-    contracts_df = pd.read_csv('database/market_data.csv')
+    contracts_df = pd.read_csv('database/market_data.csv', header=0)
     # dtypes = {
     #     'Column1': str,  # 将'Column1'设置为字符串类型
     #     'Column2': int,  # 将'Column2'设置为整数类型
@@ -44,16 +44,22 @@ class MarketData:
             print('reading', file)
             df = self.__read_daily_csv(file_path)
             df = df.astype(str)
+            # print(df)
             self.contracts_df = self.contracts_df.astype(str)
             # df['Date'] = pd.to_datetime(df['Date'], format='%Y%m%d')
             # self.contracts_df['Date'] = pd.to_datetime(
             #     self.contracts_df['Date'], format='%Y%m%d')
             df_merge = df.merge(self.contracts_df, how='outer', indicator=True)
             df = df.loc[df_merge['_merge'] == 'left_only']
+            # print(df)
             self.contracts_df = pd.concat([self.contracts_df, df])
 
     def save(self):
         file_path = os.path.join(self.save_directory, self.file_name)
+        print('saving', self.file_name)
+        self.contracts_df = self.contracts_df.sort_values(
+            by=['Contract', 'Date', ])
+        # print(self.contracts_df.info())
         self.contracts_df.to_csv(file_path, index=False)
 
     def __read_daily_csv(self, file_path):
@@ -88,7 +94,8 @@ class MarketData:
                     row.insert(1, None)
                     row.insert(1, None)
                     row.pop()
-                    print(len(row))
+                    # print(len(row))
+                    # print(row)
                     data_list.append(row)
                 if row[0] in ['商品名称:' + key for key in commodities_dict]:
                     read_switch = True
@@ -106,7 +113,7 @@ class MarketData:
 
 if __name__ == '__main__':
     market_data = MarketData()
-    # market_data.read_monthly_data()
-    # market_data.save()
+    market_data.read_monthly_data()
+    market_data.save()
     market_data.read_daily_data()
     market_data.save()
