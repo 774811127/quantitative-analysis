@@ -10,14 +10,10 @@ class MarketData:
     daily_data_directory = r'database\original_data\daily_data'
     save_directory = 'database'
     file_name = 'market_data.csv'
-    contracts_df = pd.read_csv('database/market_data.csv', header=0)
-    # dtypes = {
-    #     'Column1': str,  # 将'Column1'设置为字符串类型
-    #     'Column2': int,  # 将'Column2'设置为整数类型
-    #     'Column3': float,  # 将'Column3'设置为浮点数类型
-    #     'Column4': bool,  # 将'Column4'设置为布尔类型
-    #     'DateColumn': 'datetime64[ns]'  # 将'DateColumn'设置为日期时间类型
-    # }
+    contracts_df = pd.read_csv(
+        'database/market_data.csv', header=0)
+    contracts_df['Date'] = pd.to_datetime(
+        contracts_df['Date'], format='%Y-%m-%d')
 
     def read_monthly_data(self):
         file_list = [file for file in os.listdir(
@@ -29,8 +25,9 @@ class MarketData:
             df = pd.read_excel(file_path, header=1, usecols=range(
                 0, 14), skiprows=2, skipfooter=5)
             df['Contract'] = df['Contract'].ffill()
-            df = df.astype(str)
-            self.contracts_df = self.contracts_df.astype(str)
+            df.loc[:, 'pre close':'OI'] = df.loc[:, 'pre close':'OI'].apply(
+                pd.to_numeric, errors='coerce')
+            df['Date'] = pd.to_datetime(df['Date'], format='%Y%m%d')
             df_merge = df.merge(self.contracts_df, how='outer', indicator=True)
             df = df.loc[df_merge['_merge'] == 'left_only']
             self.contracts_df = pd.concat([self.contracts_df, df])
@@ -43,15 +40,11 @@ class MarketData:
             file_path = os.path.join(self.daily_data_directory, file)
             print('reading', file)
             df = self.__read_daily_csv(file_path)
-            df = df.astype(str)
-            # print(df)
-            self.contracts_df = self.contracts_df.astype(str)
-            # df['Date'] = pd.to_datetime(df['Date'], format='%Y%m%d')
-            # self.contracts_df['Date'] = pd.to_datetime(
-            #     self.contracts_df['Date'], format='%Y%m%d')
+            df.loc[:, 'pre close':'OI'] = df.loc[:, 'pre close':'OI'].apply(
+                pd.to_numeric, errors='coerce')
+            df['Date'] = pd.to_datetime(df['Date'], format='%Y%m%d')
             df_merge = df.merge(self.contracts_df, how='outer', indicator=True)
             df = df.loc[df_merge['_merge'] == 'left_only']
-            # print(df)
             self.contracts_df = pd.concat([self.contracts_df, df])
 
     def save(self):
@@ -59,8 +52,12 @@ class MarketData:
         print('saving', self.file_name)
         self.contracts_df = self.contracts_df.sort_values(
             by=['Contract', 'Date', ])
-        # print(self.contracts_df.info())
+        self.contracts_df.loc[:, 'pre close':'OI'] = self.contracts_df.loc[:,
+                                                                           'pre close':'OI'].apply(pd.to_numeric, errors='coerce')
+        self.contracts_df['Date'] = pd.to_datetime(
+            self.contracts_df['Date'], format='%Y%m%d')
         self.contracts_df.to_csv(file_path, index=False)
+        print('\n')
 
     def __read_daily_csv(self, file_path):
         commodities_path = r'database\commodities.csv'
@@ -94,8 +91,6 @@ class MarketData:
                     row.insert(1, None)
                     row.insert(1, None)
                     row.pop()
-                    # print(len(row))
-                    # print(row)
                     data_list.append(row)
                 if row[0] in ['商品名称:' + key for key in commodities_dict]:
                     read_switch = True
@@ -105,8 +100,8 @@ class MarketData:
             for row in data_list:
                 row[1] = date
 
-            columns = ['Contract', 'Date', 'pre close', 'Pre settle', 'Open',
-                       'High', 'Low', 'Close', 'Settle', 'ch1', 'ch2', 'Volume', 'Amount', 'OI']
+            columns = ['Contract', 'Date', 'pre close', 'Pre settle', 'Open', 'High',
+                       'Low', 'Close', 'Settle', 'ch1', 'ch2', 'Volume', 'Amount', 'OI']
             df = pd.DataFrame(data_list, columns=columns)
         return df
 
